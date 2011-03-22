@@ -1,0 +1,19 @@
+<component name="libraryTable">
+  <library name="Unnamed">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../Bukkit/target/bukkit-0.0.1-SNAPSHOT.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../Minecraft-Server-Mod/out/artifacts/Minecraft_Mod/Minecraft_Mod.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../CraftBukkit/target/craftbukkit-0.0.1-SNAPSHOT.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../Homes/out/artifacts/Homes/Homes.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../TweakWarp/out/artifacts/TweakWarp/TweakWarp.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../Permissions/out/artifacts/Permissions/Permissions.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../Permissions/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../TweakWarp/src" />
+      <root url="file://$PROJECT_DIR$/../Bukkit/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../CraftBukkit/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

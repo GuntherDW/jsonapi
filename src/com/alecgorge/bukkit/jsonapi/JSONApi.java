@@ -1,4 +1,4 @@
-package com.bukkit.alecgorge.jsonapi;
+package com.alecgorge.bukkit.jsonapi;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -9,8 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
+import java.lang.reflect.Field;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -21,18 +20,21 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
-import org.bukkit.Server;
+import com.guntherdw.bukkit.Homes.Homes;
+import com.guntherdw.bukkit.TweakWarp.TweakWarp;
+import com.nijikokun.bukkit.Permissions.Permissions;
+import net.minecraft.server.MinecraftServer;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.*;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerListener;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.PluginLoader;
-import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.*;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import com.bukkit.alecgorge.jsonapi.JSONSocketServer.WorkerRunnable;
 
 
 /**
@@ -41,9 +43,9 @@ import com.bukkit.alecgorge.jsonapi.JSONSocketServer.WorkerRunnable;
 */
 public class JSONApi extends JavaPlugin  {
 	
-	public JSONApi(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File folder, File plugin, ClassLoader cLoader) {
+	/* public JSONApi(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File folder, File plugin, ClassLoader cLoader) {
 		super(pluginLoader, instance, desc, folder, plugin, cLoader);
-	}
+	} */
 
 	private JSONApiPlayerListener l = new JSONApiPlayerListener(this);
 	protected static final Logger log = Logger.getLogger("Minecraft");
@@ -60,10 +62,55 @@ public class JSONApi extends JavaPlugin  {
 	public static int webSocketPort = 0;
 	public static int socketPort = 0;
 	public static ArrayList<String> whitelist = new ArrayList<String>();
-	
+	public static Permissions perm;
+    public static Homes homes;
+    public static TweakWarp tweakWarp;
+    private MinecraftServer console;
+    // public Server server = null;
+
+    public void setupPermissions() {
+        Plugin plugin = this.getServer().getPluginManager().getPlugin("Permissions");
+
+        if (perm == null) {
+            if (plugin != null) {
+                perm = (Permissions) plugin;
+            }
+        }
+    }
+
+    public Logger getLogger()
+    {
+        return log;
+    }
+
+    public void SetupHomesWarps()
+    {
+        Plugin plugin = this.getServer().getPluginManager().getPlugin("Homes");
+        if(homes!=null)
+            if(plugin!=null)
+                homes=(Homes) plugin;
+
+        plugin = this.getServer().getPluginManager().getPlugin("TweakWarp");
+        if(tweakWarp!=null)
+            if(plugin!=null)
+                tweakWarp=(TweakWarp) plugin;
+
+    }
 
 	public void onEnable() {
 		try {
+
+            try {
+                Field cfield = null;
+                cfield = CraftServer.class.getDeclaredField("console");
+                cfield.setAccessible(true);
+                this.console = (MinecraftServer) cfield.get((CraftServer)getServer());
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+            setupPermissions();
 			Hashtable<String, String> auth = new Hashtable<String, String>();
 			
 			PropertiesFile options = new PropertiesFile("JSONApi.properties");
@@ -160,17 +207,36 @@ public class JSONApi extends JavaPlugin  {
 			//System.exit( -1 );
 		}		
 	}
-	
+
+    public void reloadPermissions()
+    {
+        this.perm.Security.reload("world");
+    }
+
+    public void reloadWarps()
+    {
+        this.tweakWarp.reloadWarpTable(false);
+    }
+
+    public void reloadHomes()
+    {
+        this.homes.reloadHomes();
+    }
+
 	@Override
 	public void onDisable(){
-		
-	}
-	
-	private void initialiseListeners(){
+
+    }
+
+    public MinecraftServer getConsole() {
+        return console;
+    }
+
+    private void initialiseListeners(){
 		PluginManager pm = getServer().getPluginManager();
 		
 		pm.registerEvent(Type.PLAYER_CHAT, l, Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_COMMAND, l, Priority.Normal, this);
+		// pm.registerEvent(Type.PLAYER_COMMAND, l, Priority.Normal, this);
 		pm.registerEvent(Type.PLAYER_QUIT, l, Priority.Normal, this);
 		pm.registerEvent(Type.PLAYER_LOGIN, l, Priority.Normal, this);
 	
@@ -221,6 +287,17 @@ public class JSONApi extends JavaPlugin  {
 			}
 		}
 	}
+
+    public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
+        Player player = (Player) commandSender;
+        String cmd = "";
+        for(String split : strings)
+        {
+            cmd+= split+" ";
+        }
+        HttpStream.log("commands", new String[] {player.getName(), command + " " + cmd});
+        return false;
+    }
 	
 	public class JSONApiPlayerListener extends PlayerListener {
 		JSONApi p;
@@ -254,9 +331,9 @@ public class JSONApi extends JavaPlugin  {
 			HttpStream.log("connections", new String[] {"disconnect", event.getPlayer().getName()});
 		}
 		
-		@Override
+		/* @Override
 		public void onPlayerCommand(PlayerChatEvent event) {
 			HttpStream.log("commands", new String[] {event.getPlayer().getName(), event.getMessage()});
-		}
+		} */
 	}
 }

@@ -1,4 +1,4 @@
-package com.bukkit.alecgorge.jsonapi;
+package com.alecgorge.bukkit.jsonapi;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Calendar;

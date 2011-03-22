@@ -1,10 +1,12 @@
-package com.bukkit.alecgorge.jsonapi;
+package com.alecgorge.bukkit.jsonapi;
 
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -32,7 +34,7 @@ public class XMLRPCPlayerAPI {
      *
      * @param name
      * @return
-     * @throws APIXMLRPCException
+     * @throws APIException
      */
     public Player getPlayerByName(String name) throws APIException {
     	Player player = etc.getServer().getPlayer(name);
@@ -66,6 +68,7 @@ public class XMLRPCPlayerAPI {
         kv.put("z", player.getLocation().getZ());
         kv.put("yaw", (double)player.getLocation().getPitch());
         kv.put("pitch", (double)player.getLocation().getYaw());
+        kv.put("world", player.getLocation().getWorld().getName());
         //kv.put("prefix", player.getPrefix());
         return kv;
     }
@@ -105,7 +108,7 @@ public class XMLRPCPlayerAPI {
      *
      * @param name
      * @return
-     * @throws APIXMLRPCException
+     * @throws APIException
      */
     public Map<String,Object> getPlayerInfo(String name) throws APIException {
         Player player = getPlayerByName(name);
@@ -119,7 +122,7 @@ public class XMLRPCPlayerAPI {
      * @param itemID
      * @param amount
      * @return
-     * @throws APIXMLRPCException
+     * @throws APIException
      * @return
      */
     public boolean giveItem(String name, int itemID, int amount)
@@ -140,7 +143,7 @@ public class XMLRPCPlayerAPI {
      * @param itemID
      * @param amount
      * @return
-     * @throws APIXMLRPCException
+     * @throws APIException
      * @return
      */
     public boolean giveItemDrop(String name, int itemID, int amount)
@@ -163,20 +166,47 @@ public class XMLRPCPlayerAPI {
      * @param x
      * @param y
      * @param z
-     * @throws APIXMLRPCException
+     * @throws APIException
      * @return
      */
-    public boolean teleportTo(String name, double x, double y, double z)
+    public boolean teleportTo(String name, Integer x, Integer y, Integer z)
             throws APIException {
         Player player = getPlayerByName(name);
-        
+
         Location newLocation = player.getLocation().clone();
         newLocation.setX(x);
         newLocation.setY(y);
         newLocation.setZ(z);
-        
+
         player.teleportTo(newLocation);
         return true;
+    }
+
+    public boolean teleportTo(String name, Integer x, Integer y, Integer z, String world)
+            throws APIException {
+        Player player = getPlayerByName(name);
+
+        Location newLocation = player.getLocation().clone();
+        newLocation.setX(x);
+        newLocation.setY(y);
+        newLocation.setZ(z);
+        newLocation.setWorld(etc.getServer().getWorld(world));
+
+        player.teleportTo(newLocation);
+        return true;
+    }
+
+    public String replaceColors(String s)
+    {
+        String msg = s;
+        Pattern p = Pattern.compile("&c[0-9a-fA-F]");
+        Matcher m = p.matcher(s);
+        while(m.find())
+        {
+            msg = m.replaceAll("§\0");
+        }
+
+        return msg;
     }
 
     /**
@@ -188,19 +218,20 @@ public class XMLRPCPlayerAPI {
      * @param z
      * @param pitch
      * @param yaw
-     * @throws APIXMLRPCException
+     * @throws APIException
      * @return
      */
     public boolean teleportTo(String name, double x, double y, double z,
-            double pitch, double yaw)
+            double pitch, double yaw, String world)
             throws APIException {
         Player player = getPlayerByName(name);
         
-        Location location = new Location(player.getWorld(), x, y, z);
+        Location location = new Location(etc.getServer().getWorld(world), x, y, z);
         location.setPitch((float)pitch);
         location.setYaw((float)yaw);
         
         player.teleportTo(location);
+        etc.getLogger().info("[JsonAPI] teleport : "+name+" to "+x+","+y+","+z);
         return true;
     }
 
@@ -209,7 +240,7 @@ public class XMLRPCPlayerAPI {
      *
      * @param name
      * @return
-     * @throws APIXMLRPCException
+     * @throws APIException
      */
     public boolean toggleMute(String name) throws APIException {
     	return false;
@@ -223,13 +254,14 @@ public class XMLRPCPlayerAPI {
      *
      * @param name
      * @param reason
-     * @throws APIXMLRPCException
+     * @throws APIException
      * @return
      */
     public boolean kick(String name, String reason)
             throws APIException {
     	Player player = getPlayerByName(name);
         player.kickPlayer(reason);
+        etc.getLogger().info("[JsonAPI] kick : "+name+", "+reason);
         return true;
     }
 
@@ -238,13 +270,15 @@ public class XMLRPCPlayerAPI {
      *
      * @param name
      * @param msg
-     * @throws APIXMLRPCException
+     * @throws APIException
      * @return
      */
     public boolean sendMessage(String name, String msg)
             throws APIException {
         Player player = getPlayerByName(name);
-        player.sendMessage(msg);
+        String m = msg.replace("%c", "§");
+        player.sendMessage(m);
+        etc.getLogger().info("[JsonAPI] sendMessage : "+m);
         return true;
     }
 
@@ -255,9 +289,11 @@ public class XMLRPCPlayerAPI {
      * @return
      */
     public boolean broadcastMessage(String msg) {
+        String m = msg.replace("%c", "§");
         for (Player player : etc.getServer().getOnlinePlayers()) {
-            player.sendMessage(msg);
+            player.sendMessage(m);
         }
+        etc.getLogger().info("[JsonAPI] broadcastMessage : "+m);
         return true;
     }
 
@@ -265,7 +301,7 @@ public class XMLRPCPlayerAPI {
      * Get a player's inventory.
      *
      * @param name
-     * @throws APIXMLRPCException
+     * @throws APIException
      */
     public Map<Integer,Map<String,Integer>> getInventory(String name)
             throws APIException {
@@ -309,6 +345,54 @@ public class XMLRPCPlayerAPI {
     }
 
     /**
+     * Get a player's inventory.
+     *
+     * @param name
+     * @throws APIException
+     */
+    public Map<Integer,Map<String,Integer>> getInventoryDurability(String name)
+            throws APIException {
+        Player player = getPlayerByName(name);
+        PlayerInventory  inventory = player.getInventory();
+
+        HashMap<Integer, Map<String,Integer>> out =
+                new HashMap<Integer,Map<String,Integer>>();
+
+        int count = 0;
+        for(ItemStack item : inventory.getContents()) {
+            Map<String,Integer> kv = new HashMap<String,Integer>();
+            kv.put("itemID", item.getTypeId());
+            kv.put("durability", Integer.valueOf(item.getDurability()));
+            out.put(count, kv);
+            count++;
+        }
+
+        Map<String,Integer> kv = new HashMap<String,Integer>();
+        kv.put("itemID", inventory.getBoots().getTypeId());
+        // kv.put("amount", (kv.get("itemID") > 0 ? 1 : 0));
+        kv.put("durability", Integer.valueOf(inventory.getBoots().getDurability()));
+        out.put(100, kv);
+
+        kv = new HashMap<String,Integer>();
+        kv.put("itemID", inventory.getLeggings().getTypeId());
+        kv.put("durability", Integer.valueOf(inventory.getLeggings().getDurability()));
+        out.put(101, kv);
+
+        kv = new HashMap<String,Integer>();
+        kv.put("itemID", inventory.getChestplate().getTypeId());
+        kv.put("durability", Integer.valueOf(inventory.getChestplate().getDurability()));
+        out.put(102, kv);
+
+        kv = new HashMap<String,Integer>();
+        kv.put("itemID", inventory.getHelmet().getTypeId());
+        kv.put("durability", Integer.valueOf(inventory.getHelmet().getDurability()));
+        out.put(103, kv);
+
+
+        return out;
+    }
+
+    /**
      * Remove the item in a player's inventory slot.
      *
      * @param name
@@ -319,7 +403,7 @@ public class XMLRPCPlayerAPI {
     public boolean removeInventorySlot(String name, int slot)
             throws APIException {
     	Player player = getPlayerByName(name);
-        player.getInventory().setItem(slot, new ItemStack(0,0));
+        player.getInventory().setItem(slot, new ItemStack(0, 0));
         return true;
     }
 
@@ -368,5 +452,10 @@ public class XMLRPCPlayerAPI {
     	//Player player = getPlayerByName(name);
         //return etc.getDataSource().getKitNames(player).split(",");
     	return new String[0];
+    }
+
+    public void reloadPermissions()
+    {
+        etc.reloadPermissions();
     }
 }

@@ -1,4 +1,4 @@
-package com.bukkit.alecgorge.jsonapi;
+package com.alecgorge.bukkit.jsonapi;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;

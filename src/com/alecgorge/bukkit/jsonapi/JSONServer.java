@@ -1,10 +1,7 @@
-package com.bukkit.alecgorge.jsonapi;
-
+package com.alecgorge.bukkit.jsonapi;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -37,11 +34,15 @@ public class JSONServer extends NanoHTTPD {
 					int key = -1;
 					for(Class<?> arg : argTypes) {
 						key++;
-						
+
 						if(arg.getName().equals("int")) {
 							params[key] = new Integer(params[key].toString());
+						} else if(arg.getName().equals("double")) {
+							params[key] = new Double(params[key].toString());
+						} if(arg.getName().equals("float")) {
+							params[key] = new Float(params[key].toString());
 						}
-					}		
+					}
 					return m.invoke(methods.get(cat), params);
 				/*} catch (IllegalArgumentException e) {
 					// TODO Auto-generated catch block
@@ -177,8 +178,8 @@ public class JSONServer extends NanoHTTPD {
 			return new NanoHTTPD.Response(HTTP_FORBIDDEN, MIME_JSON, callback(callback, r.toJSONString()));
 		}
 		
-		
-		JSONApi.outLog.info("[JSONApi] "+header.get("X-REMOTE-ADDR")+": method="+ parms.getProperty("method").concat("?args=").concat((String) args));
+		if(!parms.getProperty("method").contains("player.getPlayers") && !parms.getProperty("method").contains("player.getInventory") )
+		    JSONApi.outLog.info("[JSONApi] "+header.get("X-REMOTE-ADDR")+": method="+ parms.getProperty("method").concat("?args=").concat((String) args));
 		
 		if(args == null || calledMethod == null || calledMethod.length < 2) {
 			JSONObject r = new JSONObject();
@@ -193,6 +194,7 @@ public class JSONServer extends NanoHTTPD {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+            Object[] obj =  ((ArrayList) args).toArray(new Object[((ArrayList) args).size()]);
 			if(args.getClass().getCanonicalName().endsWith("JSONArray")) {
 				//for(Object x : (ArrayList)args) {
 					try {
@@ -207,13 +209,15 @@ public class JSONServer extends NanoHTTPD {
 						r.put("result", "success");
 						r.put("source", calledMethodHold);
 						r.put("success", result);
-						
+
 						return new NanoHTTPD.Response( HTTP_OK, MIME_JSON, callback(callback, r.toJSONString()));
 					}
 					catch (Exception e) {
 						JSONObject r = new JSONObject();
 						r.put("result", "error");
 						r.put("error", "Caught exception: "+e.getStackTrace().toString());
+                        System.out.println("Caught exception!");
+                        e.printStackTrace();
 						return new NanoHTTPD.Response( HTTP_INTERNALERROR, MIME_JSON, callback(callback, r.toJSONString()));
 					}
 				//}

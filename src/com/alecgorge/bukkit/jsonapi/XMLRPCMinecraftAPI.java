@@ -1,4 +1,4 @@
-package com.bukkit.alecgorge.jsonapi;
+package com.alecgorge.bukkit.jsonapi;
 
 import org.bukkit.block.Block;
 
@@ -33,7 +33,7 @@ public class XMLRPCMinecraftAPI {
      * @return
      */
     public int getBlockID(int x, int y, int z) {
-        Block block = etc.getServer().getWorlds()[0].getBlockAt(x, y, z);
+        Block block = etc.getServer().getWorlds().get(0).getBlockAt(x, y, z);
     	return block.getTypeId();
     }
 
@@ -87,7 +87,7 @@ public class XMLRPCMinecraftAPI {
      * @return
      */
     public boolean setBlockID(int x, int y, int z, int id) {
-    	Block block = etc.getServer().getWorlds()[0].getBlockAt(x, y, z);
+    	Block block = etc.getServer().getWorlds().get(0).getBlockAt(x, y, z);
     	return block.setTypeId(id);
     }
 
@@ -100,7 +100,7 @@ public class XMLRPCMinecraftAPI {
      * @return
      */
     public int getHighestBlockY(int x, int z) {
-        return etc.getServer().getWorlds()[0].getHighestBlockYAt(x, z);
+        return etc.getServer().getWorlds().get(0).getHighestBlockYAt(x, z);
     }
 
     /**
@@ -109,7 +109,7 @@ public class XMLRPCMinecraftAPI {
      * @return
      */
     public int getTime() {
-        return (int)etc.getServer().getTime();
+        return (int)etc.getServer().getWorlds().get(0).getTime();
     }
 
     /**
@@ -119,7 +119,7 @@ public class XMLRPCMinecraftAPI {
      * @return
      */
     public boolean setTime(int time) {
-        etc.getServer().setTime(time);
+        etc.getServer().getWorlds().get(0).setTime(time);
         return true;
     }
 

@@ -1,4 +1,4 @@
-package com.bukkit.alecgorge.jsonapi;
+package com.alecgorge.bukkit.jsonapi;
 
 
 import java.io.BufferedReader;
@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,8 +18,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.PluginManager;
 
 /**
@@ -47,6 +49,7 @@ public class XMLRPCServerAPI {
         l.add(loc.getZ());
         l.add((double)loc.getPitch());
         l.add((double)loc.getYaw());
+        // l.add(loc.getWorld().getName());
         return l;
     }
     
@@ -103,13 +106,14 @@ public class XMLRPCServerAPI {
         kv.put("z", loc.getZ());
         kv.put("pitch", loc.getPitch());
         kv.put("yaw", loc.getYaw());
+        kv.put("world", loc.getWorld().getName());
         return kv;
     }
 
     /**
      * Convert arrays of integers stored as strings to List<Integer>.
      * 
-     * @param raw
+     * @param items
      * @return
      */
     public static List<Integer> integerStringsToList(Set<Integer> items) {
@@ -161,18 +165,34 @@ public class XMLRPCServerAPI {
     	return locationToMap(etc.getServer().getWorlds()[0].ge);
     }*/
 
-    /**
-     * Run console command in the context of a player.
-     *
-     * @param command
-     * @return
-     *\/
-    public boolean runConsoleCommand(String command, String player)
-            throws APIException {
-        etc.getServer().useConsoleCommand(command,
-                XMLRPCPlayerAPI.getPlayerByName(player));
-        return true;
+    public boolean runPluginCommand(String plugin, String command)
+    {
+        Plugin p = etc.getServer().getPluginManager().getPlugin(plugin);
+        if(p!=null)
+        {
+            // ((plugin.substring(0,1).toUpperCase() + plugin.substring(1)) p).command;
+            // System.out.println(integer.intValue());
+
+            try {
+                Class c = p.getClass();
+                Method m = c.getMethod(command);
+                Object obj = m.invoke(p);
+                Boolean b = (Boolean) obj;
+                return b.booleanValue();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+            return false;
+        } else {
+            return false;
+        }
     }
+
+
 
     /**
      * Returns whether a timer has expired.
@@ -187,13 +207,18 @@ public class XMLRPCServerAPI {
     /**
      * Run console command.
      * 
-     * @param command
+     * @param commandlist
      * @return
-     *\/
-    public boolean runConsoleCommand(String command) {
-        etc.getServer().useConsoleCommand(command);
-        return true;
-    }*/
+     */
+    public boolean runConsoleCommand(String commandlist) {
+
+        String command = commandlist;
+        JSONConsoleCommandSender console = new JSONConsoleCommandSender(etc.getServer(), command, true);
+        if (((CraftServer) etc.getServer()).dispatchCommand(console, command)) {
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Get a list of plugins.
@@ -268,6 +293,15 @@ public class XMLRPCServerAPI {
         disablePlugin(pluginName);
         enablePlugin(pluginName);
         return true;
+    }
+
+    public void reloadPermissions() {
+        etc.reloadPermissions();
+        return;
+    }
+
+    public void blaat() {
+        etc.getServer().reload();
     }
 
     /**
@@ -433,6 +467,16 @@ public class XMLRPCServerAPI {
     }
 
     /**
+    * Adds a ban
+     * @param name
+     * @return
+    */
+    public void banPlayer(String name)
+    {
+        ((CraftServer) etc.getServer()).getHandle().a(name);
+    }
+
+    /**
      * Modify a ban.
      * 
      * @param name
@@ -481,9 +525,10 @@ public class XMLRPCServerAPI {
      * @param name
      * @param ip
      * @return
-     *\/
+     */
     public boolean isBanned(String name, String ip) {
-        return etc.getDataSource().isOnBanList(name, ip);
+        // return etc.getDataSource().isOnBanList(name, ip);
+        return ((CraftServer) etc.getServer()).getHandle().isBanned(name);
     }
 
     /**
@@ -575,9 +620,15 @@ public class XMLRPCServerAPI {
      * Reload the ban list.
      *
      * @return
-     *\/
+     */
     public boolean reloadBanList() {
-        etc.getDataSource().loadBanList();
+        // etc.getDataSource().loadBanList();
+        // etc.getServer().
+        /* for(World world : etc.getServer().getWorlds())
+        {
+            world.dropItemNaturally()
+        } */
+        ((CraftServer)etc.getServer()).getHandle().g();
         return true;
     }
 
